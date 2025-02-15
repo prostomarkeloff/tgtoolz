@@ -40,7 +40,7 @@ class I18NGenerator:
             class_name = "".join(class_name)
 
             code += f"\n\nclass {class_name}(I18NBase):\n"
-            code += f"    _translations = {json.dumps(items, indent=4)}\n"
+            code += f"    _translations = {PARAM_PATTERN.sub(r'{\1}', json.dumps(items, indent=4))}\n"
 
             code += f"""
     def __init__(self, lang_code: str):
@@ -48,11 +48,13 @@ class I18NGenerator:
     """
 
             for key, entry in items.items():
-                sample_translation = entry.get("en", "")
-                if sample_translation:
-                    sample_translation = (
-                        f"Sample translation: {sample_translation} (en)"
+                sample_translation = entry.get(list(entry.keys())[0], None)
+                if not sample_translation:
+                    raise RuntimeError(
+                        f"Entry {list(entry.keys())[0]} doesn't have any language."
                     )
+                if sample_translation:
+                    sample_translation = f"Sample translation: {sample_translation}"
 
                 params = extract_params(sample_translation)
 

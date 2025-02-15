@@ -15,7 +15,10 @@ def i18n_refresh(
         None, "--output-file", "-o", help="Path to output Python module"
     ),
     get_language_code_node_path: str = typer.Option(
-        "tgtoolz.i18n.lang_code_node.LanguageCodeFromUserSourceNode", "--language-code-node-path", "-lc", help="Path to the language code node"
+        "tgtoolz.i18n.lang_code_node.LanguageCodeFromUserSourceNode",
+        "--language-code-node-path",
+        "-lc",
+        help="Path to the language code node",
     ),
 ):
     if localization_file and output_file and get_language_code_node_path:
