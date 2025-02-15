@@ -1,0 +1,29 @@
+[project]
+name = "tgtoolz"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "prostomarkeloff",email = "28061158+prostomarkeloff@users.noreply.github.com"}
+]
+license = {text = "MIT"}
+requires-python = ">=3.12, <4.0"
+dependencies = [
+    "typer (>=0.15.1,<0.16.0)",
+    "telegrinder @ git+ssh://git@github.com/timoniq/telegrinder@dev",
+    "toml (>=0.10.2,<0.11.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.tgtoolz.i18n]
+localization_file = "locales.json"
+output_file = "src/i18n.py"
+
+[tool.poetry.scripts]
+tgtoolz = "tgtoolz.cli:app"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.9.6"
