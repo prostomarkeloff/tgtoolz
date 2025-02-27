@@ -1,76 +1,37 @@
 import os
-import json
-import re
-import copy
 
 from dataclasses import dataclass
 
 from tgtoolz.config import I18NConfig
-from tgtoolz.i18n.constants import I18N_BASE_CODE
-
-
-PARAM_PATTERN = re.compile(r"\{(\w+):(\w+)\}")
-
-
-def extract_params(translation: str):
-    return {match[0]: match[1] for match in PARAM_PATTERN.findall(translation)}
-
+from tgtoolz.i18n.impl import (
+    enrich_class_methods_arguments_with_plurals,
+    generate_final_code,
+    parse_into_i18n_classes,
+    parse_locales_from_text,
+)
 
 @dataclass
 class I18NGenerator:
     config: I18NConfig
 
-    def load_locals(self) -> dict[str, dict[str, dict[str, str]]]:
+    def load_locales(self):
         with open(self.config.localization_file_path, "r", encoding="utf-8") as file:
-            return json.load(file)
+            return parse_locales_from_text(file.read())
 
     def generate_i18n_class(self):
-        translations = self.load_locals()
+        classes = parse_into_i18n_classes(self.load_locales())
+        for class_ in classes:
+            enrich_class_methods_arguments_with_plurals(class_)
 
-        code = copy.copy(I18N_BASE_CODE)
-        print(code)
-        code = code.format(
-            GET_LANGUAGE_CODE_NODE=self.config.get_language_code_node,
-            GET_LANGUAGE_CODE_NODE_IMPORT=self.config.get_language_code_node_import,
+        code = generate_final_code(classes)
+        code = code.replace(
+            "{GET_LANGUAGE_CODE_NODE}",
+            self.config.get_language_code_node,
         )
-
-        for category, items in translations.items():
-            class_name = list(category)
-            class_name[0] = class_name[0].capitalize()
-            class_name = "".join(class_name)
-
-            code += f"\n\nclass {class_name}(I18NBase):\n"
-            code += f"    _translations = {PARAM_PATTERN.sub(r'{\1}', json.dumps(items, indent=4))}\n"
-
-            code += f"""
-    def __init__(self, lang_code: str):
-        super().__init__(lang_code)
-    """
-
-            for key, entry in items.items():
-                sample_translation = entry.get(list(entry.keys())[0], None)
-                if not sample_translation:
-                    raise RuntimeError(
-                        f"Entry {list(entry.keys())[0]} doesn't have any language."
-                    )
-                if sample_translation:
-                    sample_translation = f"Sample translation: {sample_translation}"
-
-                params = extract_params(sample_translation)
-
-                param_list = ", ".join(
-                    f"{param}: {ptype}" for param, ptype in params.items()
-                )
-                param_list = f", {param_list}" if param_list else ""
-
-                method_code = f"""
-    def {key}(self{param_list}) -> str:
-        \"\"\"
-        {sample_translation}
-        \"\"\"
-        return self.get("{key}", self._translations, {", ".join([f"{param}={param}" for param in params.keys()])})
-    """
-                code += method_code
+        code = code.replace(
+            "{GET_LANGUAGE_CODE_NODE_IMPORT}",
+            self.config.get_language_code_node_import,
+        )
 
         os.makedirs(os.path.dirname(self.config.output_file_path), exist_ok=True)
         with open(self.config.output_file_path, "w", encoding="utf-8") as f:

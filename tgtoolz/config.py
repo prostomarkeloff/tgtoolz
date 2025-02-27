@@ -33,7 +33,7 @@ class I18NConfig:
                 output_file_path=config_i18n["output_file"],
                 get_language_code_node_path=config_i18n.get(
                     "get_language_code_node_path",
-                    "tgtoolz.i18n.lang_code_node.LanguageCodeFromUserSourceNode",
+                    "tgtoolz.i18n.nodes.LanguageCodeFromUserSourceNode",
                 ),
             )
         except (FileNotFoundError, toml.TomlDecodeError, KeyError):
