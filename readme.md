@@ -7,9 +7,13 @@
 ## ✨ **Features**
 
 ✅ **Advanced i18n Support** – Uses an **extended JSON format** with variables, gender-based text, pluralization, and inline formatting.
+
 ✅ **Code Generation** – Converts i18n JSON into structured **Telegrinder-ready Python classes**.
+
 ✅ **Validation** – Checks translation integrity and highlights missing or inconsistent keys.
+
 ✅ **Bot Templates (Coming Soon)** – Generate complete bot projects with a single command.
+
 ✅ **Prebuilt nodes (Coming Soon)** – Built-in **nodes** for cleaner and more scalable bot architecture.
 
 ---
@@ -36,8 +40,11 @@ tgtoolz i18n refresh
 
 TGToolz extends JSON with support for:
 🔹 **Placeholders** – `{name:str}`, `{age:int}`
+
 🔹 **Gender-based text** – `@gender(male, female, other)`
+
 🔹 **Pluralization** – `@plural(one, few, many)`
+
 🔹 **Rich Formatting** – `@bold(text)`, `@link(text, url)`, `@italic(text)`, etc
 
 ```json
@@ -97,8 +104,11 @@ bot.run_forever(skip_updates=True)
 ## 🔮 **Upcoming Features**
 
 🚀 **Bot Templates** – Generate different bot types in seconds.
+
 🛠 **Nodes** – Prebuilt components for structured development.
+
 💾 **Middleware & Storage Integration** – Simplify session and API management.
+
 🔌 **Plugin System** – Extend TGToolz with custom modules.
 
 ---
