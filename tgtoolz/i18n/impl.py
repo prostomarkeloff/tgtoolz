@@ -5,7 +5,7 @@ import typing
 
 from typing import Any
 from tgtoolz.i18n.constants import I18N_BASE_CODE
-from tgtoolz.i18n.lang_parser import LanguageProcessor, PluralForms
+from tgtoolz.i18n.lang_parser import GenderForms, LanguageProcessor, PluralForms
 
 # {
 #     "ClassName": {
@@ -21,7 +21,7 @@ def remove_none(data: Any) -> Any:
     if isinstance(data, dict):
         return {k: remove_none(v) for k, v in data.items() if v is not None}  # type: ignore
     elif isinstance(data, list):
-        return [remove_none(item) for item in data if item is not None]
+        return [remove_none(item) for item in data if item is not None]  # type: ignore
     else:
         return data
 
@@ -54,8 +54,8 @@ class I18NTranslationMethod:
 class Translation:
     text: list[str]
 
-    type PluralKey = str
-    plural_mapping: dict[PluralKey, PluralForms]
+    plural_mapping: dict[str, PluralForms]
+    gender_mapping: dict[str, GenderForms]
 
 
 @dataclass
@@ -122,7 +122,9 @@ def parse_i18n_translations(
                 text.append(processor.parse_and_render(unparsed))
 
             translations[method_name][locale_name] = Translation(
-                text=text, plural_mapping=processor.plural_mappings
+                text=text,
+                plural_mapping=processor.plural_mappings,
+                gender_mapping=processor.gender_mappings,
             )
 
     return translations
@@ -142,7 +144,9 @@ def parse_into_i18n_classes(locales: LocalesJson) -> list[I18NTranslationClass]:
     return classes
 
 
-def enrich_class_methods_arguments_with_plurals(i18n_class: I18NTranslationClass):
+def enrich_class_methods_arguments_with_plurals_and_genders(
+    i18n_class: I18NTranslationClass,
+):
     for method in i18n_class.methods:
         first_locale_translation = i18n_class.translations[method.method_name].get(
             list(i18n_class.translations[method.method_name].keys())[0]
@@ -153,6 +157,9 @@ def enrich_class_methods_arguments_with_plurals(i18n_class: I18NTranslationClass
             method.arguments[plural_key] = (
                 'Literal["plural", "singular", "dual"] | Plurality'
             )
+
+        for gender_key in first_locale_translation.gender_mapping.keys():
+            method.arguments[gender_key] = 'Literal["male", "female", "other"] | Gender'
 
 
 def generate_methods_code(methods: list[I18NTranslationMethod]) -> str:
@@ -166,7 +173,7 @@ def generate_methods_code(methods: list[I18NTranslationMethod]) -> str:
         )
         code += f"    def {method.method_name}(self, {formatted_args_types}) -> str:\n"
         code += f"""        return self._get(_key="{method.method_name}", {formatted_args_values})"""
-        code += f"\n\n"
+        code += "\n\n"
 
     return code
 

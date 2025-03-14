@@ -1,6 +1,5 @@
 import re
 from dataclasses import dataclass
-from enum import StrEnum
 from typing import Callable
 
 
@@ -9,6 +8,13 @@ class PluralForms:
     singular: str
     plural: str
     dual: str | None
+
+
+@dataclass
+class GenderForms:
+    male: str
+    female: str
+    other: str | None
 
 
 class Text:
@@ -27,34 +33,50 @@ class FunctionCall(Text):
     alias: str | None = None
 
 
-class AvailableFunctions(StrEnum):
-    BOLD = "bold"
-    LINK = "link"
-    PLURAL = "plural"
-
-
 class LanguageProcessor:
     def __init__(self):
-        self.transform_mapping: dict[
-            AvailableFunctions, Callable[[FunctionCall], str]
-        ] = {
-            AvailableFunctions.BOLD: self.transform_bold,
-            AvailableFunctions.LINK: self.transform_link,
-            AvailableFunctions.PLURAL: self.transform_plural,
+        self.transform_mapping: dict[str, Callable[[FunctionCall], str]] = {
+            "bold": self.transform_bold,
+            "link": self.transform_link,
+            "plural": self.transform_plural,
+            "gender": self.transform_gender,
+            "italic": self.transform_italic,
         }
 
-        self.plural_counter: int = 0
+        self._counter: int = 0
         self.plural_mappings: dict[str, PluralForms] = {}
+        self.gender_mappings: dict[str, GenderForms] = {}
 
     def transform_bold(self, fc: FunctionCall) -> str:
         if len(fc.args) != 1:
             raise ValueError("Bold requires exactly 1 argument")
         return f"<b>{fc.args[0]}</b>"
 
+    def transform_italic(self, fc: FunctionCall) -> str:
+        if len(fc.args) != 1:
+            raise ValueError("Italic requires exactly 1 argument")
+        return f"<i>{fc.args[0]}</i>"
+
     def transform_link(self, fc: FunctionCall) -> str:
         if len(fc.args) != 2:
             raise ValueError("Link requires exactly 2 arguments")
         return f'<a href="{fc.args[1]}">{fc.args[0]}</a>'
+
+    def transform_gender(self, fc: FunctionCall) -> str:
+        if len(fc.args) not in (2, 3):
+            raise ValueError("Gender requires 2 or 3 arguments")
+        if fc.alias:
+            key = fc.alias
+        else:
+            key = f"gender{self._counter}"
+            self._counter += 1
+        gender_data = GenderForms(
+            male=fc.args[0],
+            female=fc.args[1],
+            other=fc.args[2] if len(fc.args) == 3 else None,
+        )
+        self.gender_mappings[key] = gender_data
+        return f"{{{key}}}"
 
     def transform_plural(self, fc: FunctionCall) -> str:
         if len(fc.args) not in (2, 3):
@@ -62,8 +84,8 @@ class LanguageProcessor:
         if fc.alias:
             key = fc.alias
         else:
-            key = f"plural{self.plural_counter}"
-            self.plural_counter += 1
+            key = f"plural{self._counter}"
+            self._counter += 1
         plural_data = PluralForms(
             singular=fc.args[0],
             plural=fc.args[1],
@@ -76,7 +98,7 @@ class LanguageProcessor:
         elements: list[Text] = []
         pos = 0
         func_pattern = re.compile(
-            r'@([a-zA-Z_]\w*)\(\s*(.*?)\)(?:\s+as\s+([a-zA-Z_]\w+))?'
+            r"@([a-zA-Z_]\w*)\(\s*(.*?)\)(?:\s+as\s+([a-zA-Z_]\w+))?"
         )
         for match in func_pattern.finditer(text):
             start, end = match.span()
@@ -84,7 +106,7 @@ class LanguageProcessor:
                 elements.append(PlainText(text[pos:start]))
             func_name = match.group(1)
             arg_string = match.group(2)
-            alias = match.group(3)  # May be None.
+            alias = match.group(3)
             args = self._parse_arguments(arg_string)
             elements.append(FunctionCall(name=func_name, args=args, alias=alias))
             pos = end
@@ -96,7 +118,7 @@ class LanguageProcessor:
                 result += element.text
             elif isinstance(element, FunctionCall):
                 try:
-                    func_enum = AvailableFunctions(element.name.lower())
+                    func_enum = element.name.lower()
                 except ValueError:
                     result += f"@{element.name}({', '.join(element.args)})"
                     continue
@@ -112,7 +134,7 @@ class LanguageProcessor:
         arg_pattern = re.compile(
             r'\s*(?:"((?:\\.|[^"\\])*)"|'  # Quoted string (group 1)
             r"(\{\s*([^}:]+)(?::[^}]+)?\s*\})|"  # Curly-braced token (group 2 full, group 3 token name)
-            r'([^,]+))\s*(?:,|$)'     # Bare token (group 4)
+            r"([^,]+))\s*(?:,|$)"  # Bare token (group 4)
         )
         for match in arg_pattern.finditer(arg_string):
             if match.group(1) is not None:
@@ -125,5 +147,4 @@ class LanguageProcessor:
         return args
 
     def _strip_types_in_curly(self, text: str) -> str:
-        # This function replaces any occurrence of {token:type} with {token} in the text.
         return re.sub(r"\{([^}:]+):[^}]+\}", r"{\1}", text)

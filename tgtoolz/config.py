@@ -11,8 +11,8 @@ class I18NConfig:
     localization_file_path: str
     output_file_path: str
     get_language_code_node_path: str
-    get_language_code_node_import: str | None = None
-    get_language_code_node: str | None = None
+    get_language_code_node_import: str = ""
+    get_language_code_node: str = ""
 
     def __post_init__(self):
         parts = self.get_language_code_node_path.split(".")

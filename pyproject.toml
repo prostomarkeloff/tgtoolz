@@ -1,15 +1,16 @@
 [project]
 name = "tgtoolz"
 version = "0.1.0"
-description = ""
+description = "Telegram Bot Developer toolkit 🛠️"
 authors = [
     {name = "prostomarkeloff",email = "28061158+prostomarkeloff@users.noreply.github.com"}
 ]
 license = {text = "MIT"}
+readme = "readme.md"
 requires-python = ">=3.12, <4.0"
 dependencies = [
     "typer (>=0.15.1,<0.16.0)",
-    "telegrinder @ git+ssh://git@github.com/timoniq/telegrinder@a4c1eeb",
+    "telegrinder (>=0.4.1)",
     "toml (>=0.10.2,<0.11.0)"
 ]
 
