@@ -25,7 +25,7 @@
 ## 📦 **Installation**
 
 ```sh
-pip install tgtoolz
+pip install git+https://github.com/prostomarkeloff/tgtoolz/archive/master.zip
 ```
 
 ---
