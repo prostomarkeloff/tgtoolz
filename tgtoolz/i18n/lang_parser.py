@@ -108,7 +108,18 @@ class LanguageProcessor:
             arg_string = match.group(2)
             alias = match.group(3)
             args = self._parse_arguments(arg_string)
-            elements.append(FunctionCall(name=func_name, args=args, alias=alias))
+            fc = FunctionCall(name=func_name, args=args, alias=alias)
+            transform = self.transform_mapping.get(func_name.lower())
+            try:
+                if transform:
+                    # пробный вызов для валидации аргументов
+                    transform(fc)
+                    elements.append(fc)
+                else:
+                    elements.append(fc)
+            except Exception:
+                # если вызов невозможен, трактуем как обычный текст
+                elements.append(PlainText(text[start:end]))
             pos = end
         if pos < len(text):
             elements.append(PlainText(text[pos:]))
